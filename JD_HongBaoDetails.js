@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         红包详情
+// @name         京东京喜红包详情
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  try to take over the world!
+// @description  可以查看京东 京喜 京东优惠小程序平台的红包
 // @author       You
 // @match        *://*.jd.com/*
 // @require      https://lib.baomitu.com/jquery/3.5.1/jquery.min.js
@@ -179,7 +179,7 @@
                         arg2Arr = arg2.split("."),
                         d1 = arg1Arr.length == 2 ? arg1Arr[1] : "",
                         d2 =
-                        arg2Arr.length == 2 ? arg2Arr[1] : "";
+                            arg2Arr.length == 2 ? arg2Arr[1] : "";
                     var maxLen = Math.max(d1.length, d2.length);
                     var m = Math.pow(10, maxLen);
                     var result = Number(((arg1 * m + arg2 * m) / m).toFixed(maxLen));
@@ -193,7 +193,7 @@
                     '","platform":"0","platformId":"pcHongBao","platformToken":"f7e5532105b80989","shshshfp":"' +
                     getCookie('shshshfp') +
                     '","shshshfpa":"' + getCookie('shshshfpa') + '","shshshfpb":"' + getCookie(
-                        'shshshfpb') +
+                    'shshshfpb') +
                     '","organization":"JD","pageNum":1}&jsonp=jsonp_' + new Date().getTime() + '_95971';
                 var httpRequest = new XMLHttpRequest();
                 httpRequest.open('GET', url, true);
