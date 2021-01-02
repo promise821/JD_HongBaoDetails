@@ -1,15 +1,17 @@
 // ==UserScript==
 // @name         京东京喜红包详情
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2.4
 // @description  可以查看京东 京喜 京东优惠小程序平台的红包
 // @author       You
 // @match        *://*.jd.com/*
 // @require      https://lib.baomitu.com/jquery/3.5.1/jquery.min.js
+// @namespace    https: //greasyfork.org/zh-CN/scripts/419131
 // ==/UserScript==
 
 (function () {
     'use strict';
+    console.clear();
     //悬浮球创建
     var css = '#fb{width:50px;height:50px;background:rgb(19,167,19);position:fixed;cursor:move;box-sizing:border-box;border-radius:50%;background-size:100% 100%;box-shadow:5px 5px 40px rgba(0,0,0,0.5);overflow:hidden;}';
     var style = document.createElement('style');
@@ -134,7 +136,6 @@
 
     //悬浮球点击事件
     fb.onclick = function () {
-        console.clear();
         var layer = layui.layer;
         var table = layui.table;
         $(document.head).append('<style>#moneyDiv>div:nth-child(6) {margin: 0px 0px;}</style>');
@@ -343,5 +344,18 @@
         });
 
     }
-
+    window.onload = function () {
+        document.querySelectorAll("div.dt.cw-icon").forEach((e, index, arr) => {
+            if (arr.length == 7) {
+                if (index != 1 && index != 0 && index != 6) {
+                    console.log('7=' + index);
+                    e.style.width = '56px';
+                }
+            } else {
+                if (index != 0) {
+                    e.style.width = '56px';
+                }
+            }
+        });
+    }
 })();
