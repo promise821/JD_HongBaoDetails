@@ -1,4 +1,10 @@
 # 京东京喜红包详情
+
+## JD_HongBaoDetails.js
+这是油猴的可视化脚本：https://greasyfork.org/zh-CN/scripts/419131
+![](https://greasyfork.s3.us-east-2.amazonaws.com/7mnsjk8k1o9dv8kzowux2vspoa91)
+
+##  HBDetail.js
 与LXK大佬 https://github.com/lxk0301/jd_scripts/tree/master 的脚本可共存<br>
 用来查看每个账户的今明后天各个平台红包详情<br><br>
 **日志和推送效果如下**<br>
