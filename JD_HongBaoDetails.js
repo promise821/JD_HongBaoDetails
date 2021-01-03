@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         京东京喜红包详情
 // @namespace    http://tampermonkey.net/
-// @version      0.2.4
+// @version      0.3
 // @description  可以查看京东 京喜 京东优惠小程序平台的红包
 // @author       You
 // @match        *://*.jd.com/*
@@ -138,13 +138,16 @@
     fb.onclick = function () {
         var layer = layui.layer;
         var table = layui.table;
-        $(document.head).append('<style>#moneyDiv>div:nth-child(6) {margin: 0px 0px;}</style>');
+
         $(document.body).append('<div style="display: none;"  id="moneyDiv"></div>');
+        $('#moneyDiv').append('<table  id="subHB"></table>');
         $('#moneyDiv').append('<table  id="money"></table>');
         $('#moneyDiv').append('<table  id="expiresToDayMoney"></table>');
         $('#moneyDiv').append('<table  id="expiresToDayMoneyDetail"></table>');
         $('#moneyDiv').append('<table  id="expiresTomorrowMoney"></table>');
         $('#moneyDiv').append('<table  id="expiresTomorrowMoneyDetail"></table>');
+        $('#moneyDiv').append('<table  id="expiresDATMoney"></table>');
+        $('#moneyDiv').append('<table  id="expiresDATMoneyDetail"></table>');
 
         layer.open({
             type: 1,
@@ -187,6 +190,21 @@
                     var d = arguments[2];
                     return typeof d === "number" ? Number((result).toFixed(d)) : result;
                 }
+
+                function calHB(orgLimitStr, hb, jx, jd, jdyh) {
+                    if (contain(orgLimitStr, '京喜') || contain(orgLimitStr, '拼购')) {
+                        jx = add(hb.balance, jx);
+                    } else if (contain(orgLimitStr, '全部渠道通用')) {
+                        jd = add(hb.balance, jd);
+                    } else if (contain(orgLimitStr, '京东优惠')) {
+                        jdyh = add(hb.balance, jdyh);
+                    }
+                    return {
+                        jx,
+                        jd,
+                        jdyh
+                    };
+                }
                 var json;
                 var url =
                     'https://api.m.jd.com/api?appid=myhongbao_pc&functionId=myhongbao_list_usable&body={"appId":"pcHongBao","appToken":"f7e5532105b80989","jda":"' +
@@ -204,42 +222,85 @@
                     if (httpRequest.readyState == 4 && httpRequest.status == 200) {
                         json = eval(httpRequest.responseText.substr(25));
 
-                        var hbs = json.hongBaoList;
-                        var jx = 0;
-                        var jd = 0;
-                        var jdyh = 0;
-                        var expiresToDay = 0;
-                        var expiresToDayList = new Array();
-                        var expiresTomorrow = 0;
-                        var expiresTomorrowList = new Array();
+                        let hbs = json.hongBaoList;
+
+                        let subHB = 0;
+                        let jx = 0;
+                        let jd = 0;
+                        let jdyh = 0;
+
+                        let expiresToDay = 0;
+                        let expiresToDayJD = 0;
+                        let expiresToDayJX = 0;
+                        let expiresToDayJDYH = 0;
+
+                        let expiresTomorrow = 0;
+                        let expiresTomorrowJD = 0;
+                        let expiresTomorrowJX = 0;
+                        let expiresTomorrowJDYH = 0;
+
+                        let expiresDAT = 0;
+                        let expiresDATJD = 0;
+                        let expiresDATJX = 0;
+                        let expiresDATJDYH = 0;
 
                         var timeStamp = new Date(new Date().setHours(0, 0, 0, 0)) / 1;
-                        var tomorrowStart = timeStamp + 86400000;
-                        var tomorrowEnd = timeStamp + 86400000 * 2;
+                        let tomorrowStart = timeStamp + 86400000;
+                        let tomorrowEnd = timeStamp + 86400000 * 2;
+                        let DATEnd = timeStamp + 86400000 * 3;
+                        let res;
 
-                        for (var i = 0; i < hbs.length; i++) {
-                            var hb = hbs[i];
-                            var orgLimitStr = hb.orgLimitStr;
-                            if (contain(orgLimitStr, '京喜') || contain(orgLimitStr, '拼购')) {
-                                hb.orgLimitStr = '京喜';
-                                jx = add(hb.balance, jx);
-                            } else if (contain(orgLimitStr, '全部渠道通用')) {
-                                hb.orgLimitStr = '京东';
-                                jd = add(hb.balance, jd);
-                            } else if (contain(orgLimitStr, '京东优惠')) {
-                                hb.orgLimitStr = '京东优惠';
-                                jdyh = add(hb.balance, jdyh);
+                        for (let i = 0; i < hbs.length; i++) {
+                            let hb = hbs[i];
+                            let orgLimitStr = hb.orgLimitStr;
+
+                            //计算各平台总额
+                            res = calHB(orgLimitStr, hb, jx, jd, jdyh);
+                            jx = res.jx;
+                            jd = res.jd;
+                            jdyh = res.jdyh;
+
+                            //今天过期
+                            if (hb.endTime < tomorrowStart) {
+                                res = calHB(orgLimitStr, hb, expiresToDayJX, expiresToDayJD, expiresToDayJDYH);
+                                expiresToDayJX = res.jx;
+                                expiresToDayJD = res.jd;
+                                expiresToDayJDYH = res.jdyh;
+                                expiresToDay = add(hb.balance, expiresToDay);
                             }
-                            if (tomorrowStart <= hb.endTime && hb.endTime < tomorrowEnd) {
-                                expiresTomorrowList.push(hb);
+                            //明天过期
+                            else if (tomorrowStart <= hb.endTime && hb.endTime < tomorrowEnd) {
+                                res = calHB(orgLimitStr, hb, expiresTomorrowJX, expiresTomorrowJD, expiresTomorrowJDYH);
+                                expiresTomorrowJX = res.jx;
+                                expiresTomorrowJD = res.jd;
+                                expiresTomorrowJDYH = res.jdyh;
                                 expiresTomorrow = add(hb.balance, expiresTomorrow);
-                            } else if (hb.endTime < tomorrowStart) {
-                                expiresToDayList.push(hb);
-                                expiresToDay = add(hb.balance,
-                                    expiresToDay);
+                            }
+                            //后天过期
+                            else if (tomorrowEnd <= hb.endTime && hb.endTime < DATEnd) {
+                                res = calHB(orgLimitStr, hb, expiresDATJX, expiresDATJD, expiresDATJDYH);
+                                expiresDATJX = res.jx;
+                                expiresDATJD = res.jd;
+                                expiresDATJDYH = res.jdyh;
+                                expiresDAT = add(hb.balance, expiresDAT);
                             }
                         }
 
+                        subHB = add(add(jd, jx), jdyh);
+                        //渲染各项总金额表格
+                        table.render({
+                            elem: '#subHB',
+                            cols: [
+                                [{
+                                    field: 'subHB',
+                                    title: '红包总额',
+                                    align: 'center'
+                                }]
+                            ],
+                            data: [{
+                                "subHB": subHB
+                            }]
+                        });
                         //渲染各项总金额表格
                         table.render({
                             elem: '#money',
@@ -296,10 +357,16 @@
                                     align: 'center'
                                 }]
                             ],
-                            data: eval('(' + JSON.stringify(expiresToDayList) + ')'),
-                            page: true,
-                            limits: [5, 10],
-                            limit: 5
+                            data: [{
+                                "orgLimitStr": '今天过期京喜红包总额',
+                                "balance": expiresToDayJX
+                            }, {
+                                "orgLimitStr": '今天过期京东红包总额',
+                                "balance": expiresToDayJD
+                            }, {
+                                "orgLimitStr": '今天过期京东优惠小程序红包总额',
+                                "balance": expiresToDayJDYH
+                            }]
                         });
                         //渲染明天过期总金额表格
                         table.render({
@@ -331,13 +398,58 @@
                                     align: 'center'
                                 }]
                             ],
-                            data: eval('(' + JSON.stringify(expiresToDayList) + ')'),
-                            page: true,
-                            limits: [5, 10],
-                            limit: 5
-
+                            data: [{
+                                "orgLimitStr": '明天过期京喜红包总额',
+                                "balance": expiresTomorrowJX
+                            }, {
+                                "orgLimitStr": '明天过期京东红包总额',
+                                "balance": expiresTomorrowJD
+                            }, {
+                                "orgLimitStr": '明天过期京东优惠小程序红包总额',
+                                "balance": expiresTomorrowJDYH
+                            }]
+                        });
+                        //渲染后天过期总金额表格
+                        table.render({
+                            elem: '#expiresDATMoney',
+                            cols: [
+                                [{
+                                    field: 'balance',
+                                    title: '后天过期总金额（元）',
+                                    align: 'center'
+                                }]
+                            ],
+                            data: [{
+                                "balance": expiresDAT
+                            }]
                         });
 
+                        //渲染后天过期金额详情表格
+                        table.render({
+                            elem: '#expiresDATMoneyDetail',
+                            cols: [
+                                [{
+                                    field: 'orgLimitStr',
+                                    title: '红包平台',
+                                    align: 'center'
+                                }, {
+                                    field: 'balance',
+                                    title: '后天过期金额详情（元）',
+                                    sort: true,
+                                    align: 'center'
+                                }]
+                            ],
+                            data: [{
+                                "orgLimitStr": '后天过期京喜红包总额',
+                                "balance": expiresDATJX
+                            }, {
+                                "orgLimitStr": '后天过期京东红包总额',
+                                "balance": expiresDATJD
+                            }, {
+                                "orgLimitStr": '后天过期京东优惠小程序红包总额',
+                                "balance": expiresDATJDYH
+                            }]
+                        });
                     }
                 }
             }
