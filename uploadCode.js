@@ -1,3 +1,7 @@
+/**
+ * 定时任务cron如下
+ * 10 1,6,14,18 1,10,20 * *
+ */
 //种豆得豆
 let jdBean = 'mlrdw3aw26j3xwrsq7dbhdbtdimtzo73b7cfnca@opz57pnp2xmhwduxi2el7ucd5luzacie3fgcpfq'.split('@');
 //京东农场
